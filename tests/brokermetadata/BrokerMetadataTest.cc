@@ -25,19 +25,57 @@ using namespace pulsar;
 TEST(BrokerMetadataTest, testConsumeSuccess) {
     Client client{"pulsar://localhost:6650"};
     Producer producer;
+    ProducerConfiguration producerConfiguration;
+    producerConfiguration.setBatchingEnabled(false);
+    Result producerResult = client.createProducer("persistent://public/default/testConsumeSuccess",
+                                                  producerConfiguration, producer);
+    ASSERT_EQ(producerResult, ResultOk);
+    Consumer consumer;
+    Result consumerResult =
+        client.subscribe("persistent://public/default/testConsumeSuccess", "testConsumeSuccess", consumer);
+    ASSERT_EQ(consumerResult, ResultOk);
+    for (int i = 0; i < 10; i++) {
+        std::string content = "testConsumeSuccess" + std::to_string(i);
+        const auto msg = MessageBuilder().setContent(content).build();
+        Result sendResult = producer.send(msg);
+        ASSERT_EQ(sendResult, ResultOk);
+    }
+
+    Message receivedMsg;
+    for (int i = 0; i < 10; i++) {
+        Result receiveResult =
+            consumer.receive(receivedMsg, 1000);  // Assumed that we wait 1000 ms for each message
+        ASSERT_EQ(receiveResult, ResultOk);
+        ASSERT_EQ(receivedMsg.getDataAsString(), "testConsumeSuccess" + std::to_string(i));
+        ASSERT_EQ(receivedMsg.getIndex(), i);
+    }
+    client.close();
+}
+
+TEST(BrokerMetadataTest, testConsumeBatchSuccess) {
+    Client client{"pulsar://localhost:6650"};
+    Producer producer;
     Result producerResult = client.createProducer("persistent://public/default/testConsumeSuccess", producer);
     ASSERT_EQ(producerResult, ResultOk);
     Consumer consumer;
     Result consumerResult =
         client.subscribe("persistent://public/default/testConsumeSuccess", "testConsumeSuccess", consumer);
     ASSERT_EQ(consumerResult, ResultOk);
-    const auto msg = MessageBuilder().setContent("testConsumeSuccess").build();
-    Result sendResult = producer.send(msg);
-    ASSERT_EQ(sendResult, ResultOk);
+    for (int i = 0; i < 10; i++) {
+        std::string content = "testConsumeSuccess" + std::to_string(i);
+        const auto msg = MessageBuilder().setContent(content).build();
+        Result sendResult = producer.send(msg);
+        ASSERT_EQ(sendResult, ResultOk);
+    }
+
     Message receivedMsg;
-    Result receiveResult = consumer.receive(receivedMsg);
-    ASSERT_EQ(receiveResult, ResultOk);
-    ASSERT_EQ(receivedMsg.getDataAsString(), "testConsumeSuccess");
+    for (int i = 0; i < 10; i++) {
+        Result receiveResult =
+            consumer.receive(receivedMsg, 1000);  // Assumed that we wait 1000 ms for each message
+        ASSERT_EQ(receiveResult, ResultOk);
+        ASSERT_EQ(receivedMsg.getDataAsString(), "testConsumeSuccess" + std::to_string(i));
+        ASSERT_EQ(receivedMsg.getIndex(), i);
+    }
     client.close();
 }
 

@@ -817,7 +817,8 @@ void ClientConnection::handleIncomingMessage(const proto::CommandMessage& msg, b
             // Unlock the mutex before notifying the consumer of the
             // new received message
             lock.unlock();
-            consumer->messageReceived(shared_from_this(), msg, isChecksumValid, msgMetadata, payload);
+            consumer->messageReceived(shared_from_this(), msg, isChecksumValid, brokerEntryMetadata,
+                                      msgMetadata, payload);
         } else {
             consumers_.erase(msg.consumer_id());
             LOG_DEBUG(cnxString_ << "Ignoring incoming message for already destroyed consumer "

@@ -908,7 +908,8 @@ Message Commands::deSerializeSingleMessageInBatch(Message& batchedMessage, int32
     const MessageId& m = batchedMessage.impl_->messageId;
     auto messageId = MessageIdBuilder::from(m).batchIndex(batchIndex).batchSize(batchSize).build();
     auto batchedMessageId = std::make_shared<BatchedMessageIdImpl>(*(messageId.impl_), acker);
-    Message singleMessage(MessageId{batchedMessageId}, batchedMessage.impl_->metadata, payload, metadata,
+    Message singleMessage(MessageId{batchedMessageId}, batchedMessage.impl_->brokerEntryMetadata,
+                          batchedMessage.impl_->metadata, payload, metadata,
                           batchedMessage.impl_->topicName_);
     singleMessage.impl_->cnx_ = batchedMessage.impl_->cnx_;
 
